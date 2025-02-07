@@ -74,7 +74,14 @@ impl MailList {
         let text = util::capture_content(&body);
 
         if let (Some(subject), Some(text)) = (subject, text) {
-            info!("mail subject: {}", subject);
+            if let Some(filters) = &self.config.filters {
+                if !filters.iter().any(|filter| subject.contains(filter)) {
+                    info!("skip mail subject: {}", subject);
+                    return Ok(());
+                }
+            }
+
+            info!("fetch mail subject: {}", subject);
             info!("summarize mail content");
 
             let summary = self

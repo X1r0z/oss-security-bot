@@ -10,6 +10,7 @@ pub struct AppConfig {
 #[derive(Deserialize)]
 pub struct MailConfig {
     pub interval: u64,
+    pub filters: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
