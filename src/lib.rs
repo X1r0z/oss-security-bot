@@ -1,19 +1,21 @@
 use std::{fs, path::Path};
 
+use bot::{dingtalk::DingTalkBot, lark::LarkBot, wechat::WeChatBot, Push};
 use chrono::Local;
 use config::Config;
-use model::AppConfig;
+use model::{AppConfig, BotType};
 use tokio::sync::mpsc;
+use webhook::Webhook;
 
 pub mod bot;
 pub mod llm;
 pub mod mail;
 pub mod model;
 pub mod util;
+pub mod webhook;
 
 const CONFIG_NAME: &str = "Config.toml";
 const CONFIG_TEMPLATE: &str = include_str!("../templates/Default.toml");
-const CARD_TEMPLATE: &str = include_str!("../templates/Card.json");
 
 fn load_config() -> anyhow::Result<AppConfig> {
     if !Path::new(CONFIG_NAME).exists() {
@@ -34,11 +36,17 @@ pub async fn run() -> anyhow::Result<()> {
     let config = load_config()?;
     let (tx, rx) = mpsc::channel(32);
 
-    let open_ai = llm::OpenAI::new(config.llm);
-    let mut lark_bot = bot::LarkBot::new(config.bot, rx);
-    let mut mail_list = mail::MailList::new(config.mail, open_ai, Local::now(), tx);
+    let bot: Box<dyn Push> = match config.bot.bot_type {
+        BotType::DingTalk => Box::new(DingTalkBot::new(config.bot)),
+        BotType::Lark => Box::new(LarkBot::new(config.bot)),
+        BotType::WeChat => Box::new(WeChatBot::new(config.bot)),
+    };
 
-    let (r1, r2) = tokio::join!(lark_bot.run(), mail_list.run());
+    let open_ai = llm::OpenAI::new(config.llm);
+    let mut mail_list = mail::MailList::new(config.mail, open_ai, Local::now(), tx);
+    let mut webhook = Webhook::new(bot, rx);
+
+    let (r1, r2) = tokio::join!(webhook.run(), mail_list.run());
     (r1?, r2?);
 
     Ok(())
