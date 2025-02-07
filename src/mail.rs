@@ -2,29 +2,33 @@ use chrono::{DateTime, Datelike, Local};
 use tokio::sync::mpsc::Sender;
 use tracing::info;
 
-use crate::{llm::Summarizer, util};
+use crate::{
+    llm::OpenAI,
+    model::{MailConfig, Message},
+    util,
+};
 
 pub struct MailList {
+    config: MailConfig,
+    open_ai: OpenAI,
     date: DateTime<Local>,
+    tx: Sender<Message>,
     num: u32,
-    interval: u64,
-    summarizer: Summarizer,
-    tx: Sender<(String, String)>,
 }
 
 impl MailList {
     pub fn new(
-        now: DateTime<Local>,
-        interval: u64,
-        summarizer: Summarizer,
-        tx: Sender<(String, String)>,
+        config: MailConfig,
+        open_ai: OpenAI,
+        date: DateTime<Local>,
+        tx: Sender<Message>,
     ) -> Self {
         Self {
-            date: now,
-            num: 1,
-            interval,
-            summarizer,
+            config,
+            open_ai,
+            date,
             tx,
+            num: 1,
         }
     }
 
@@ -36,7 +40,7 @@ impl MailList {
             info!("fetch mail list");
             self.fetch_mail_list().await?;
 
-            tokio::time::sleep(std::time::Duration::from_secs(self.interval)).await;
+            tokio::time::sleep(std::time::Duration::from_secs(self.config.interval)).await;
         }
     }
 
@@ -74,13 +78,17 @@ impl MailList {
             info!("summarize mail content");
 
             let summary = self
-                .summarizer
-                .summarize(&text)
+                .open_ai
+                .create_completion(&text)
                 .await
                 .unwrap_or("Failed to summarize".to_string());
-            let text = format!("{}\n\n{}", summary, url);
 
-            self.tx.send((subject, text)).await?;
+            let message = Message {
+                title: subject,
+                content: summary,
+                reference: url,
+            };
+            self.tx.send(message).await?;
             self.num += 1;
         }
 

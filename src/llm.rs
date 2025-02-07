@@ -1,43 +1,28 @@
 use serde_json::json;
 
-pub struct Summarizer {
-    base_url: String,
-    api_key: String,
-    model: String,
-    system: String,
-    user: String,
+use crate::model::LLMConfig;
+
+pub struct OpenAI {
+    config: LLMConfig,
 }
 
-impl Summarizer {
-    pub fn new(
-        base_url: String,
-        api_key: String,
-        model: String,
-        system: String,
-        user: String,
-    ) -> Self {
-        Self {
-            base_url,
-            api_key,
-            model,
-            system,
-            user,
-        }
+impl OpenAI {
+    pub fn new(config: LLMConfig) -> Self {
+        Self { config }
     }
 
-    pub async fn summarize(&self, text: &str) -> anyhow::Result<String> {
-        let url = format!("{}/chat/completions", self.base_url);
-
+    pub async fn create_completion(&self, text: &str) -> anyhow::Result<String> {
+        let url = format!("{}/chat/completions", self.config.base_url);
         let req_data = json!({
-            "model": self.model,
+            "model": self.config.model,
             "messages": [
                 {
                     "role": "system",
-                    "content": self.system,
+                    "content": self.config.system,
                 },
                 {
                     "role": "user",
-                    "content": self.user.replace("{TEXT}", text)
+                    "content": self.config.user.replace("{TEXT}", text),
                 },
             ]
         });
@@ -45,7 +30,7 @@ impl Summarizer {
         let client = reqwest::Client::new();
         let resp = client
             .post(url)
-            .bearer_auth(&self.api_key)
+            .bearer_auth(&self.config.api_key)
             .json(&req_data)
             .send()
             .await?;

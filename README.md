@@ -2,14 +2,14 @@
 
 [oss-security](https://www.openwall.com/lists/oss-security/) 飞书推送机器人, 基于 Rust 编写 🦀
 
-使用 LLM 对邮件内容进行总结 (Summarize)
+使用 LLM 对邮件内容进行摘要总结 (Summarize)
 
 ## 配置
 
-程序初次运行时会生成一份 Config.toml
+程序初次运行时会生成 `Config.toml`
 
 ```toml
-[oss]
+[mail]
 interval = 60
 
 [bot]
