@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use tokio::sync::mpsc::Receiver;
+use tracing::{error, info};
 
 use crate::{
     bot::Push,
@@ -18,10 +19,15 @@ impl Webhook {
         Self { config, bot, rx }
     }
 
-    pub async fn run(&mut self) -> anyhow::Result<()> {
+    pub async fn run(&mut self) {
         loop {
             if let Some(message) = self.rx.recv().await {
-                self.bot.send_message(message).await?;
+                info!("send message to {} bot", self.bot.name());
+
+                if let Err(e) = self.bot.send_message(message).await {
+                    error!("failed to send message: {:?}", e);
+                }
+
                 tokio::time::sleep(Duration::from_secs(self.config.interval)).await;
             }
         }

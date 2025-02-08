@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use bot::{dingtalk::DingTalkBot, lark::LarkBot, wechat::WeChatBot, Push};
 use config::Config;
 use model::{AppConfig, BotType};
-use tokio::sync::mpsc;
+use tokio::{join, sync::mpsc};
 use webhook::Webhook;
 
 pub mod bot;
@@ -46,8 +46,6 @@ pub async fn run() -> anyhow::Result<()> {
     let mut mail_list = mail::MailList::new(config.mail, llm, tx);
     let mut webhook = Webhook::new(config.webhook, bot, rx);
 
-    let (r1, r2) = tokio::join!(webhook.run(), mail_list.run());
-    (r1?, r2?);
-
+    join!(mail_list.run(), webhook.run());
     Ok(())
 }

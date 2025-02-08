@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use serde_json::json;
-use tracing::info;
 
 use crate::model::{BotConfig, Message};
 
@@ -18,9 +17,11 @@ impl WeChatBot {
 
 #[async_trait]
 impl Push for WeChatBot {
-    async fn send_message(&self, message: Message) -> anyhow::Result<()> {
-        info!("send message to wechat bot");
+    fn name(&self) -> String {
+        "wechat".to_string()
+    }
 
+    async fn send_message(&self, message: Message) -> anyhow::Result<()> {
         let url = format!(
             "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
             self.config.access_token

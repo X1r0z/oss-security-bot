@@ -28,7 +28,7 @@ secret_key = "<SECRET_KEY>"     # 用于签名校验的密钥
 [llm]
 base_url = "<BASE_URL>" # LLM URL (OpenAI API 规范)
 api_key = "<API_KEY>"   # LLM API KEY
-model = "<MODEL>"       # LLM Model Name
+model = "<MODEL>"       # LLM Model
 
 system = "你是一名经验丰富的网络安全研究员 (Security Researcher)" # System Prompt
 user = """请结合以下要求总结文本:

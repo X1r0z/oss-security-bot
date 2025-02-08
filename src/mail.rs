@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 use tokio::sync::mpsc::Sender;
-use tracing::info;
+use tracing::{error, info};
 
 use crate::{
     db,
@@ -28,10 +28,13 @@ impl MailList {
         }
     }
 
-    pub async fn run(&mut self) -> anyhow::Result<()> {
+    pub async fn run(&mut self) {
         loop {
             info!("fetch mail list");
-            self.fetch_mail_list().await?;
+
+            if let Err(e) = self.fetch_mail_list().await {
+                error!("failed to fetch mail list: {:?}", e);
+            }
 
             tokio::time::sleep(std::time::Duration::from_secs(self.config.interval)).await;
         }
@@ -49,20 +52,20 @@ impl MailList {
             .into_iter()
             .take(self.config.recent);
 
-        for mail in mails {
-            let exists = db::select_mail(&self.conn, &mail)?;
+        for mail_date in mails {
+            let exists = db::select_mail(&self.conn, &mail_date)?;
 
             if !exists {
-                db::insert_mail(&self.conn, &mail)?;
-                self.fetch_mail(mail).await?;
+                db::insert_mail(&self.conn, &mail_date)?;
+                self.fetch_mail(mail_date).await?;
             }
         }
 
         Ok(())
     }
 
-    pub async fn fetch_mail(&self, mail: String) -> anyhow::Result<()> {
-        let url = format!("https://www.openwall.com/lists/oss-security/{}", mail);
+    pub async fn fetch_mail(&self, mail_date: String) -> anyhow::Result<()> {
+        let url = format!("https://www.openwall.com/lists/oss-security/{}", mail_date);
 
         let client = reqwest::Client::new();
         let resp = client.get(&url).send().await?;

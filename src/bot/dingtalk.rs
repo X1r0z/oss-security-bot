@@ -3,7 +3,6 @@ use base64::Engine;
 use hmac::{Hmac, Mac};
 use serde_json::json;
 use sha2::Sha256;
-use tracing::info;
 
 use crate::model::{BotConfig, Message};
 
@@ -32,9 +31,11 @@ impl DingTalkBot {
 
 #[async_trait]
 impl Push for DingTalkBot {
-    async fn send_message(&self, message: Message) -> anyhow::Result<()> {
-        info!("send message to dingtalk bot");
+    fn name(&self) -> String {
+        "dingtalk".to_string()
+    }
 
+    async fn send_message(&self, message: Message) -> anyhow::Result<()> {
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
             .as_millis();

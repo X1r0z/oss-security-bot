@@ -5,7 +5,6 @@ use base64::Engine;
 use hmac::{Hmac, Mac};
 use serde_json::json;
 use sha2::Sha256;
-use tracing::info;
 
 use crate::model::{BotConfig, Message};
 
@@ -34,9 +33,11 @@ impl LarkBot {
 
 #[async_trait]
 impl Push for LarkBot {
-    async fn send_message(&self, message: Message) -> anyhow::Result<()> {
-        info!("send message to lark bot");
+    fn name(&self) -> String {
+        "lark".to_string()
+    }
 
+    async fn send_message(&self, message: Message) -> anyhow::Result<()> {
         let url = format!(
             "https://open.feishu.cn/open-apis/bot/v2/hook/{}",
             self.config.access_token
