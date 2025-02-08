@@ -3,14 +3,22 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct AppConfig {
     pub mail: MailConfig,
+    pub webhook: WebhookConfig,
     pub bot: BotConfig,
     pub llm: LLMConfig,
 }
 
 #[derive(Deserialize)]
 pub struct MailConfig {
-    pub interval: u64,
+    pub db_name: String,
     pub filters: Option<Vec<String>>,
+    pub interval: u64,
+    pub recent: usize,
+}
+
+#[derive(Deserialize)]
+pub struct WebhookConfig {
+    pub interval: u64,
 }
 
 #[derive(Deserialize)]
@@ -40,7 +48,6 @@ pub struct LLMConfig {
     pub user: String,
 }
 
-#[derive(Debug)]
 pub struct Message {
     pub title: String,
     pub content: String,

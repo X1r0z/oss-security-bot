@@ -26,7 +26,7 @@ impl OpenAI {
 
     pub async fn create_completion(&self, input: &str) -> anyhow::Result<String> {
         let url = format!("{}/chat/completions", self.config.base_url);
-        let req_data = json!({
+        let data = json!({
             "model": self.config.model,
             "messages": self.create_prompt(input)
         });
@@ -35,7 +35,7 @@ impl OpenAI {
         let resp = client
             .post(url)
             .bearer_auth(&self.config.api_key)
-            .json(&req_data)
+            .json(&data)
             .send()
             .await?;
 

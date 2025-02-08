@@ -1,13 +1,13 @@
 use std::{fs, path::Path};
 
 use bot::{dingtalk::DingTalkBot, lark::LarkBot, wechat::WeChatBot, Push};
-use chrono::Local;
 use config::Config;
 use model::{AppConfig, BotType};
 use tokio::sync::mpsc;
 use webhook::Webhook;
 
 pub mod bot;
+pub mod db;
 pub mod llm;
 pub mod mail;
 pub mod model;
@@ -36,15 +36,15 @@ pub async fn run() -> anyhow::Result<()> {
     let config = load_config()?;
     let (tx, rx) = mpsc::channel(32);
 
+    let llm = llm::OpenAI::new(config.llm);
     let bot: Box<dyn Push> = match config.bot.bot_type {
         BotType::DingTalk => Box::new(DingTalkBot::new(config.bot)),
         BotType::Lark => Box::new(LarkBot::new(config.bot)),
         BotType::WeChat => Box::new(WeChatBot::new(config.bot)),
     };
 
-    let open_ai = llm::OpenAI::new(config.llm);
-    let mut mail_list = mail::MailList::new(config.mail, open_ai, Local::now(), tx);
-    let mut webhook = Webhook::new(bot, rx);
+    let mut mail_list = mail::MailList::new(config.mail, llm, tx);
+    let mut webhook = Webhook::new(config.webhook, bot, rx);
 
     let (r1, r2) = tokio::join!(webhook.run(), mail_list.run());
     (r1?, r2?);
