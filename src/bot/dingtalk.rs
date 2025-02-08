@@ -18,7 +18,7 @@ impl DingTalkBot {
         Self { config }
     }
 
-    fn generate_signature(&self, timestamp: i64) -> anyhow::Result<String> {
+    fn generate_signature(&self, timestamp: u128) -> anyhow::Result<String> {
         let secret_key = self.config.secret_key.as_ref().unwrap();
         let string_to_sign = format!("{}\n{}", timestamp, secret_key);
 
@@ -35,7 +35,9 @@ impl Push for DingTalkBot {
     async fn send_message(&self, message: Message) -> anyhow::Result<()> {
         info!("send message to dingtalk bot");
 
-        let timestamp = chrono::Local::now().timestamp_millis();
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_millis();
         let signature = self.generate_signature(timestamp)?;
 
         let url = format!(

@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use async_trait::async_trait;
 use base64::Engine;
 use hmac::{Hmac, Mac};
@@ -20,7 +22,7 @@ impl LarkBot {
         Self { config }
     }
 
-    fn generate_signature(&self, timestamp: i64) -> anyhow::Result<String> {
+    fn generate_signature(&self, timestamp: u64) -> anyhow::Result<String> {
         let secret_key = self.config.secret_key.as_ref().unwrap();
         let string_to_sign = format!("{}\n{}", timestamp, secret_key);
         let mac = Hmac::<Sha256>::new_from_slice(string_to_sign.as_bytes())?;
@@ -39,7 +41,7 @@ impl Push for LarkBot {
             "https://open.feishu.cn/open-apis/bot/v2/hook/{}",
             self.config.access_token
         );
-        let timestamp = chrono::Local::now().timestamp();
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
         let signature = self.generate_signature(timestamp)?;
 
         let mut card = serde_json::from_str::<serde_json::Value>(CARD_TEMPLATE)?;
