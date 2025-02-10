@@ -52,20 +52,20 @@ impl MailList {
             .into_iter()
             .take(self.config.recent);
 
-        for mail_date in mails {
-            let exists = db::select_mail(&self.conn, &mail_date)?;
+        for mail_id in mails {
+            let exists = db::select_mail(&self.conn, &mail_id)?;
 
             if !exists {
-                db::insert_mail(&self.conn, &mail_date)?;
-                self.fetch_mail(mail_date).await?;
+                db::insert_mail(&self.conn, &mail_id)?;
+                self.fetch_mail(mail_id).await?;
             }
         }
 
         Ok(())
     }
 
-    pub async fn fetch_mail(&self, mail_date: String) -> anyhow::Result<()> {
-        let url = format!("https://www.openwall.com/lists/oss-security/{}", mail_date);
+    pub async fn fetch_mail(&self, mail_id: String) -> anyhow::Result<()> {
+        let url = format!("https://www.openwall.com/lists/oss-security/{}", mail_id);
 
         let client = reqwest::Client::new();
         let resp = client.get(&url).send().await?;
